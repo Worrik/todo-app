@@ -13,12 +13,15 @@ services:
     volumes:
       - .:/app
     depends_on:
-      - postgres
-      - rabbitmq
-      - redis
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
 
   rabbitmq:
-    image: rabbitmq:3.13-management
+    image: rabbitmq:management
     container_name: todo-app-rabbitmq
     environment:
       RABBITMQ_DEFAULT_USER: $RABBITMQ_USER
@@ -26,9 +29,14 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics check_port_connectivity
+      interval: 10s
+      timeout: 10s
+      retries: 5
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:alpine
     container_name: todo-app-postgres
     environment:
       POSTGRES_USER: $POSTGRES_USER
